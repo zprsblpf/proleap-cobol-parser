@@ -31,6 +31,8 @@ public class CobolParserParamsImpl implements CobolParserParams {
 
 	protected CobolSourceFormatEnum format;
 
+	protected boolean ignoreMissingCopyBooks = false;
+
 	protected boolean ignoreSyntaxErrors;
 
 	@Override
@@ -61,6 +63,11 @@ public class CobolParserParamsImpl implements CobolParserParams {
 	@Override
 	public CobolSourceFormatEnum getFormat() {
 		return format;
+	}
+
+	@Override
+	public boolean getIgnoreMissingCopyBooks() {
+		return ignoreMissingCopyBooks;
 	}
 
 	@Override
@@ -96,6 +103,11 @@ public class CobolParserParamsImpl implements CobolParserParams {
 	@Override
 	public void setFormat(final CobolSourceFormatEnum format) {
 		this.format = format;
+	}
+
+	@Override
+	public void setIgnoreMissingCopyBooks(final boolean ignoreMissingCopyBooks) {
+		this.ignoreMissingCopyBooks = ignoreMissingCopyBooks;
 	}
 
 	@Override

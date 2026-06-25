@@ -10,8 +10,10 @@ package io.proleap.cobol.preprocessor.sub.document.impl;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Scanner;
+import java.util.Set;
 import java.util.Stack;
 
 import org.antlr.v4.runtime.BufferedTokenStream;
@@ -48,6 +50,9 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 	private final static Logger LOG = LoggerFactory.getLogger(CobolDocumentParserListenerImpl.class);
 
 	private final Stack<CobolDocumentContext> contexts = new Stack<CobolDocumentContext>();
+
+	/** 累计跳过的缺簿名称，供调用者排查（ignoreMissingCopyBooks=true 时才填充）。 */
+	private final Set<String> missingCopyBooks = new HashSet<String>();
 
 	private final CobolParserParams params;
 
@@ -338,6 +343,12 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 		String result;
 
 		if (copyBook == null) {
+			if (params.getIgnoreMissingCopyBooks()) {
+				final String copyBookName = copySource.getText();
+				LOG.warn("Missing copy book skipped: {}", copyBookName);
+				missingCopyBooks.add(copyBookName);
+				return "";
+			}
 			throw new CobolPreprocessorException("Could not find copy book " + copySource.getText()
 					+ " in directory of COBOL input file or copy books param object.");
 		} else {
@@ -350,6 +361,14 @@ public class CobolDocumentParserListenerImpl extends CobolPreprocessorBaseListen
 		}
 
 		return result;
+	}
+
+	/**
+	 * 返回本次预处理中所有被跳过的缺簿名称（仅在 ignoreMissingCopyBooks=true 时才被填充）。
+	 * 供调用方做排查统计。
+	 */
+	public Set<String> getMissingCopyBooks() {
+		return missingCopyBooks;
 	}
 
 	/**

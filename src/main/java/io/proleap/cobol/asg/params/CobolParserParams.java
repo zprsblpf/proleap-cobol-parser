@@ -31,6 +31,8 @@ public interface CobolParserParams {
 
 	CobolSourceFormatEnum getFormat();
 
+	boolean getIgnoreMissingCopyBooks();
+
 	boolean getIgnoreSyntaxErrors();
 
 	void setCharset(Charset charset);
@@ -44,6 +46,8 @@ public interface CobolParserParams {
 	void setDialect(CobolDialect dialect);
 
 	void setFormat(CobolSourceFormatEnum format);
+
+	void setIgnoreMissingCopyBooks(boolean ignoreMissingCopyBooks);
 
 	void setIgnoreSyntaxErrors(boolean ignoreSyntaxErrors);
 }

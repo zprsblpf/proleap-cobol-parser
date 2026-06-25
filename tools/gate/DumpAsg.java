@@ -83,6 +83,7 @@ public class DumpAsg {
         CobolParserParams params = new CobolParserParamsImpl();
         params.setFormat(fmt);
         params.setIgnoreSyntaxErrors(true); // 容错：脏源语法错误不中断，尽量产出 ASG
+        params.setIgnoreMissingCopyBooks(true); // Task 2：缺簿跳过不中断，插空串继续解析
         params.setCopyBookExtensions(Arrays.asList("cob"));
         List<File> copyDirs = new ArrayList<>();
         if (!copyDirsArg.isEmpty())
@@ -106,15 +107,15 @@ public class DumpAsg {
         ProcedureDivision pd = pu.getProcedureDivision();
         DataDivision dd = pu.getDataDivision();
 
-        // —— SECTION 有序表 ——
-        List<Section> sections = new ArrayList<>(pd.getSections());
+        // —— SECTION 有序表（pd 为 null 表示解析未产出 PROCEDURE DIVISION，退化为空列表）——
+        List<Section> sections = new ArrayList<>(pd != null ? pd.getSections() : java.util.Collections.emptyList());
         sections.sort((a, b) -> Integer.compare(lineOf(a), lineOf(b)));
 
         // —— paragraph 有序表（标注所属 section；段外 paragraph 标 null） ——
         Map<Paragraph, String> paraSection = new LinkedHashMap<>();
         for (Section s : sections)
             for (Paragraph p : s.getParagraphs()) paraSection.put(p, s.getName());
-        List<Paragraph> paragraphs = new ArrayList<>(pd.getParagraphs());
+        List<Paragraph> paragraphs = new ArrayList<>(pd != null ? pd.getParagraphs() : java.util.Collections.emptyList());
         paragraphs.sort((a, b) -> Integer.compare(lineOf(a), lineOf(b)));
 
         // —— PERFORM 收集（含 THRU 端点） ——
