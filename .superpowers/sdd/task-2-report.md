@@ -88,10 +88,40 @@ PERFORM   0/616 (0.0%)
 
 ---
 
+## Fix: DumpAsg pd null-guard
+
+**提交哈希**: `ffef9ca9`  
+**提交主题**: `fix(p0-gate): DumpAsg collectPerforms 补 pd null-guard`
+
+**修复内容**：  
+在 line 124 的 `collectPerforms(pd, performs, seen);` 调用前加入 null 检验 `if (pd != null)`。
+原因：同代码块中 pd.getSections() (line 111) 和 pd.getParagraphs() (line 118) 都有 `pd != null` 守卫，
+但 collectPerforms 的调用缺少防护，当 pd 为 null 时会 NPE。
+
+**验证命令**:
+```bash
+bash tools/gate/coverage_report.sh "/home/zp/Documents/cob/源码一期/源码/CBL FILES/ZPOLDWNM.cob"
+```
+
+**验证输出**:
+```
+=== P0 验证闸覆盖率报告 ===
+SECTION   0/125 (0.0%)
+paragraph 0/322 (0.0%)
+PERFORM   0/616 (0.0%)
+===========================
+EXIT=0
+```
+
+无 NPE，clean exit。
+
+---
+
 ## Token 使用分析
 
 本任务主要消耗来源：
 - 源码读取（CobolParserParams*.java、ListenerImpl.java、DumpAsg.java、run_dump.sh、coverage_report.sh）：约 6 次 Read 调用
 - 构建 + 验证闸各 2 轮（mvn package + gate run）
 - 诊断 DBCS `<` 问题的额外探查（grep × 4，Read × 2）
-- 整体量级：中等，约 15-20 轮工具调用
+- null-guard 修复：1 次 Read + 1 次 Edit + 1 次验证运行
+- 整体量级：中等，约 20-25 轮工具调用
