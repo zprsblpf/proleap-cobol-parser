@@ -121,7 +121,7 @@ public class DumpAsg {
         // —— PERFORM 收集（含 THRU 端点） ——
         List<PerformStatement> performs = new ArrayList<>();
         Map<Object, Boolean> seen = new java.util.IdentityHashMap<>();
-        collectPerforms(pd, performs, seen);
+        if (pd != null) collectPerforms(pd, performs, seen);
         for (Section s : sections) collectPerforms(s, performs, seen);
         for (Paragraph p : paragraphs) collectPerforms(p, performs, seen);
         performs.sort((a, b) -> Integer.compare(lineOf(a), lineOf(b)));
