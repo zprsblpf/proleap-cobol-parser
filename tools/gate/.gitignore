@@ -1,0 +1,4 @@
+# 编译产物与运行时缓存（不入库）
+*.class
+.classpath.txt
+asg_dump.json
