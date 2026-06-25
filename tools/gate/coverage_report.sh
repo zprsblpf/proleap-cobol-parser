@@ -13,8 +13,8 @@
 #   bash tools/gate/coverage_report.sh "/home/zp/Documents/cob/源码一期/源码/CBL FILES/ZPOLDWNM.cob"
 #
 # 退出码：
-#   0  —— 三行报告均打印成功（不论覆盖率高低）
-#   非0 —— run_dump.sh 本身失败（解析中断、缺 jar 等），含原始 stderr
+#   0  —— 三行报告均打印成功（不论覆盖率高低，含 run_dump.sh 失败的 0% 基线情形）
+#   2  —— 参数缺失
 #
 set -euo pipefail
 
@@ -39,18 +39,31 @@ TMPJSON="$(mktemp /tmp/asg_dump_XXXXXX.json)"
 trap 'rm -f "$TMPJSON"' EXIT
 
 echo "[coverage_report] 调用 run_dump.sh..."
-bash "$HERE/run_dump.sh" "$COB" "$PROG" "$FMT" "$TMPJSON"
+# 容忍 run_dump.sh 非零退出（如解析中断、缺 copybook 等）；
+# 失败时 JSON 文件可能不存在或为空，后续回退到 0/N 基线。
+bash "$HERE/run_dump.sh" "$COB" "$PROG" "$FMT" "$TMPJSON" || true
 
-# —— 解析计数（jq 不可用时回退到 python3）——
-if command -v jq &>/dev/null; then
-  NSEC=$(jq '.sections | length' "$TMPJSON")
-  NPAR=$(jq '.paragraphs | length' "$TMPJSON")
-  NPER=$(jq '.performs | length' "$TMPJSON")
-else
-  NSEC=$(python3 -c "import json,sys; d=json.load(open('$TMPJSON')); print(len(d['sections']))")
-  NPAR=$(python3 -c "import json,sys; d=json.load(open('$TMPJSON')); print(len(d['paragraphs']))")
-  NPER=$(python3 -c "import json,sys; d=json.load(open('$TMPJSON')); print(len(d['performs']))")
-fi
+# —— 解析计数（jq 不可用时回退到 python3；JSON 缺失/损坏时回退到 0）——
+_parse_counts() {
+  local json="$1"
+  # 文件不存在或为空时直接用 0
+  if [ ! -s "$json" ]; then
+    NSEC=0; NPAR=0; NPER=0
+    return
+  fi
+  if command -v jq &>/dev/null; then
+    NSEC=$(jq '.sections | length' "$json" 2>/dev/null) || NSEC=0
+    NPAR=$(jq '.paragraphs | length' "$json" 2>/dev/null) || NPAR=0
+    NPER=$(jq '.performs | length' "$json" 2>/dev/null) || NPER=0
+  else
+    NSEC=$(python3 -c "import json,sys; d=json.load(open('$json')); print(len(d['sections']))" 2>/dev/null) || NSEC=0
+    NPAR=$(python3 -c "import json,sys; d=json.load(open('$json')); print(len(d['paragraphs']))" 2>/dev/null) || NPAR=0
+    NPER=$(python3 -c "import json,sys; d=json.load(open('$json')); print(len(d['performs']))" 2>/dev/null) || NPER=0
+  fi
+  # 最终保险：空值也归零
+  NSEC=${NSEC:-0}; NPAR=${NPAR:-0}; NPER=${NPER:-0}
+}
+_parse_counts "$TMPJSON"
 
 # —— 打印三行报告 ——
 pct() { echo "scale=1; $1 * 100 / $2" | bc; }
